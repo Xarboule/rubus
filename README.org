@@ -1,0 +1,151 @@
+* RUBUS : Raspberry Unintelligent Boot Utility System
+** What is RUBUS?
+   RUBUS is a stupid deployment system for Raspberry Pi clusters over PXE. 
+   It gives the user an easy way to deploy images on a large amount of Raspberry Pi, while using a machine as a PXE / NFS server.
+   We created RUBUS for our Computer Science lab.
+
+** How to use RUBUS?
+   Just don't.
+   But if you really have to, read the documentation below.
+
+** Credits
+   The initial tutorial we started with :
+   https://hackaday.com/2019/11/11/network-booting-the-pi-4/
+   
+   So, thank you Jonathan Bennett for this amazing work.
+
+* Deployment scripts
+These scripts are in pre-alpha version
+** Server side
+*** add-raspberry.sh
+**** Syntax: 
+     sudo ./add-raspberry.sh <pi-name>
+**** Effect:
+     Creates a new Raspberry Pi named <pi-name> in the cluster.
+     Can only be used by an administrator.
+
+*** start-deploy.sh
+**** Syntax:
+     ./start-deploy.sh <pi-name>
+**** Effect:
+     Enables the PXE boot for the Raspberry named <pi-name>.
+     After running this command, you need to reboot the Raspberry
+     to get the new system installed on the SD card.
+     
+     Warning : After rebooting, all data on the SD card will be lost.
+
+** Raspberry side
+*** deploy-script.sh
+**** Syntax: 
+     Automatically run by the temporary system at boot
+**** Effect:
+     Copies the /iso/image.iso file to the SD card. 
+     Install all the system and reboot. 
+
+
+* How does it work :
+
+** Architecture
+   To use RUBUS, you'll need :
+   -1 server machine (We used Ubuntu server 18.04 ) named pi-controller
+   -n client Raspberry Pi (We used Raspi 4) with various different names
+  
+   We'll consider the network already contains a DHCP server for the pi-controller and all the Pis.
+
+** Raspberry Pi Bootloader
+   When a Raspberry Pi boots with the right bootloader, it'll have the following configuration :
+   -Boot order : 1) PXE 2) SD Card
+   -If a PXE server is found (our pi-controller) it'll try to access /tftp/<pi-name>
+
+** PXE boot with dnsmasq (tftp)
+   When a Raspberry Pi asks for a PXE boot on /tftp/<pi-name>, if the folder exists, contains the right files, 
+   and is not in a "disabled" state, the pi-controller server will provide them to the Raspberry Pi.
+
+** NFS temporary environment
+   Once the kernel provided by the PXE server will end, it'll try to mount a NFS available on the 
+   pi-controller at /pxe/nfs/<pi-name>. This system will finish to boot and run a script that copies the 
+   iso located in /iso/image.iso to the SD card. It'll also set the hostname and enable SSH on the Pi, 
+   before performing the "PXE suicide" procedure, and rebooting it.
+
+** "PXE suicide" procedure
+   Once your Pi has copied the iso to the SD card and configured the new system, it'll move the content of /tftp/<pi-name>
+   to the new /tftp/<pi-name>/disabled folder. That way, on next boot, the PXE boot will fail and the Pi will boot from the SD card.
+
+** Complete boot sequence
+   1) <pi-name> boots in PXE mode 
+   2) PXE Server gives the /tftp/<pi-name>
+   3) <pi-name> boots the temporary kernel
+   4) <pi-name> mounts the NFS in /pxe/nfs/<pi-name>
+   5) <pi-name> runs the deploy-script.sh
+      1) dd the /iso/image.iso on SD card
+      2) update the hostname and /etc/hosts
+      3) enable ssh at boot in the new system
+      4) umount the SD card
+      5) disable PXE for next boot
+      6) reboot
+
+
+* Documentation :
+
+** Pi's configuration :
+*** Version
+    For the moment, we only support Raspberry Pi 4.
+*** Bootloader
+**** TODO : Add the bootloader flashing procedure
+     The default Raspberry Pi 4 bootloader does not contain the PXE option. To get it, you need to flash a newer bootloader 
+     which is in beta version while i'm writing this documentation. 
+     
+
+** Server configuration :
+*** dnsmasq
+    We use a dnsmasq server to provide the PXE boot to the Pis. This dnsmasq will give the boot files located in /tftp/<pi-name>
+    to the Raspberry Pi named <pi-name> when it tries to boot in PXE mode.
+
+*** NFS
+    You need to have nfs-kernel-server enabled on your server. In your /etc/exports file, the add-raspberry.sh script will add lines 
+    to expose each Pi NFS root. Here is an example with 9 Raspberry Pi named "pi-{1-9}". The order is not important.
+    #+BEGIN_SRC /etc/exports
+    # /etc/exports: the access control list for filesystems which may be exported
+    #               to NFS clients.  See exports(5).
+    #
+    # Example for NFSv2 and NFSv3:
+    # /srv/homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)
+    #
+    # Example for NFSv4:
+    # /srv/nfs4        gss/krb5i(rw,sync,fsid=0,crossmnt,no_subtree_check)
+    # /srv/nfs4/homes  gss/krb5i(rw,sync,no_subtree_check)
+    #
+    
+    
+    /pxe/nfs/pi-8 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-9 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-7 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-1 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-2 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-3 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-4 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-5 *(rw,sync,no_subtree_check,no_root_squash)
+    /pxe/nfs/pi-6 *(rw,sync,no_subtree_check,no_root_squash)
+    #+END_SRC
+    
+    After each modification of this file, you need to reload rpcbind and nfs-kernel-server services.
+    On success, this command has no output. If the reload command fails, it probably means your /etc/exports file 
+    has a wrong syntax.
+    #+BEGIN_SRC Restart nfs-related services
+    sudo systemctl restart rpcbind nfs-kernel-service
+    #+END_SRC
+    
+*** The NFS-TEMPLATE
+
+    When you add a new Raspberry Pi to your cluster, the script add-raspi.sh copies the content of a 
+    "Template" folder named NFS-TEMPLATE, stored in /pxe/nfs/. This template contains the entire 
+    temporary Raspbian system, including your image in /iso/image.iso and the deploy-script.sh 
+    in home/pi/.
+
+    To get your NFS-TEMPLATE, you need to :
+    - Follow the instructions on the [[https://hackaday.com/2019/11/11/network-booting-the-pi-4/][tutorial from hackaday]].(We will have to rewrite this tutorial to make it more RUBUS-specific)
+    - Add the NFS-TEMPLATE/iso/image.iso file
+    - Add the NFS-TEMPLATE/home/pi/deploy-script.sh
+    - Add "sudo ./deploy-script.sh" in NFS-TEMPLATE/home/pi/.bashrc
+
+
