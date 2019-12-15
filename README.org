@@ -22,16 +22,16 @@
 These scripts are in pre-alpha version
 *** Server side:
 **** add-raspberry.sh:
-***** Syntax: 
+
      sudo ./add-raspberry.sh <pi-name>
-***** Effect:
+
      Creates a new Raspberry Pi named <pi-name> in your cluster.
      Can only be used by an administrator.
 
 **** start-deploy.sh:
-***** Syntax:
+
      ./start-deploy.sh <pi-name>
-***** Effect:
+
      Enables PXE boot for the Raspberry named <pi-name>.
      After running this command, you need to reboot your Raspberry
      to get the new system installed on the SD card.
@@ -40,9 +40,9 @@ These scripts are in pre-alpha version
 
 *** Raspberry side:
 **** deploy-script.sh:
-***** Syntax:
-     Automatically run by the temporary system at boot
-***** Effect:
+
+     Automatically run by the temporary system at boot.
+
      Copies the /iso/image.iso file to the SD card. 
      Install all the system and reboot. 
 
