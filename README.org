@@ -5,6 +5,15 @@
    It provides an easy way to deploy images on a large amount of Raspberry Pi, while using a machine as a PXE / NFS server.
    We created RUBUS for our Computer Science lab.
 
+** Implementation:
+
+ We did our tests with a basic desktop computer as pi-controller, an 16 Raspberry Pi 4.
+ Pis are powered by PoE from our switch, so we can remote reboot each Pi.
+ We have a DHCP server in our LAN.
+
+ #+ATTR_HTML: :style margin-left: auto; margin-right: auto;
+ [[https://github.com/Xarboule/rubus/blob/master/img/pi-cluster.jpg]]
+
 ** How to use RUBUS?
    For the moment, just don't.
    But if you really have to, read the documentation below, and use it at your own risks.
@@ -155,9 +164,4 @@ These scripts are in pre-alpha version
     - Add "sudo ./deploy-script.sh" in NFS-TEMPLATE/home/pi/.bashrc
 
 
-* Implementation:
-
-We did our tests with a basic desktop computer as pi-controller, an 16 Raspberry Pi 4.
-Pis are powered by PoE from our switch, so we can remote reboot each Pi.
-We have a DHCP server in our LAN.
 
