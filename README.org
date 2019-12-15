@@ -1,3 +1,4 @@
+#+OPTIONS: \n:t
 * RUBUS : Raspberry Unintelligent Boot Utility System
 ** What is RUBUS?
    RUBUS is a stupid deployment system for Raspberry Pi clusters over PXE. 
