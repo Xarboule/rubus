@@ -9,7 +9,7 @@
    For the moment, just don't.
    But if you really have to, read the documentation below, and use it at your own risks.
 
-** Credits
+** Credits:
    The initial tutorial we started with :
    https://hackaday.com/2019/11/11/network-booting-the-pi-4/
    
@@ -18,17 +18,17 @@
    We used it to flash our Raspberry Pis bootloader with a beta bootloader with PXE, 
    and to create the NFS-TEMPLATE containing our temporary system.
    
-* Deployment scripts
+* Deployment scripts:
 These scripts are in pre-alpha version
-*** Server side
-**** add-raspberry.sh
+*** Server side:
+**** add-raspberry.sh:
 ***** Syntax: 
      sudo ./add-raspberry.sh <pi-name>
 ***** Effect:
      Creates a new Raspberry Pi named <pi-name> in your cluster.
      Can only be used by an administrator.
 
-**** start-deploy.sh
+**** start-deploy.sh:
 ***** Syntax:
      ./start-deploy.sh <pi-name>
 ***** Effect:
@@ -38,44 +38,44 @@ These scripts are in pre-alpha version
      
      Warning : After rebooting, all data on the SD card will be lost.
 
-*** Raspberry side
-**** deploy-script.sh
-***** Syntax: 
+*** Raspberry side:
+**** deploy-script.sh:
+***** Syntax:
      Automatically run by the temporary system at boot
 ***** Effect:
      Copies the /iso/image.iso file to the SD card. 
      Install all the system and reboot. 
 
 
-* How does it work :
+* How does it work:
 
-*** Architecture
+*** Architecture:
    To use RUBUS, you'll need :
    -1 server machine (We used Ubuntu server 18.04 ) named pi-controller
    -n client Raspberry Pi (We used Raspi 4) with various different names
   
    We'll consider your network already contains a DHCP server for the pi-controller server and all Raspberry Pis.
 
-*** Raspberry Pi Bootloader
+*** Raspberry Pi Bootloader:
    When a Raspberry Pi boots with the right bootloader, it'll have the following configuration :
    -Boot order : 1) PXE 2) SD Card
    -If a PXE server is found (our pi-controller) it'll try to access /tftp/<pi-name>
 
-*** PXE boot with dnsmasq (tftp)
+*** PXE boot with dnsmasq (tftp):
    When a Raspberry Pi asks for a PXE boot on /tftp/<pi-name>, if this folder exists, contains the right files, 
    and is not in "disabled" state, the pi-controller server will provide them to the Raspberry Pi.
 
-*** NFS temporary environment
+*** NFS temporary environment:
    Once the kernel provided by PXE will end booting, it'll try to mount a NFS available on 
    pi-controller at /pxe/nfs/<pi-name>. This system will finish to boot and run a script that copies the 
    iso located in /iso/image.iso to SD card. It'll also set the hostname and enable SSH on the Pi, 
    before performing "PXE suicide" procedure, and rebooting.
 
-*** "PXE suicide" procedure
+*** "PXE suicide" procedure:
    Once your Pi has copied the iso to SD card and configured the new system, it'll move the content of /tftp/<pi-name>
    to a new folder "disabled" in /tftp/<pi-name>/disabled. That way, on next boot, PXE boot will fail and the Pi will boot from SD card.
 
-*** Complete boot sequence
+*** Complete boot sequence:
    1) <pi-name> boots in PXE mode 
    2) PXE Server gives the /tftp/<pi-name>
    3) <pi-name> boots temporary kernel
@@ -94,18 +94,18 @@ These scripts are in pre-alpha version
 *** Pi's configuration :
 **** Version
     For the moment, we only support Raspberry Pi 4.
-**** Bootloader
+**** Bootloader:
 ***** TODO : Add the bootloader flashing procedure
      The default Raspberry Pi 4 bootloader does not contain PXE option. To get it, you need to flash a newer bootloader 
      which is in beta version while i'm writing this documentation. 
      
 
-*** Server configuration :
-**** dnsmasq
+*** Server configuration:
+**** dnsmasq:
     We use a dnsmasq server to provide the PXE boot to the Pis. This dnsmasq will give the boot files located in /tftp/<pi-name>
     to the Raspberry Pi named <pi-name> when it tries to boot in PXE mode.
 
-**** NFS
+**** NFS:
     You need to have nfs-kernel-server enabled on your server. In your /etc/exports file, the add-raspberry.sh script will add lines 
     to expose each Pi NFS root. Here is an example with 9 Raspberry Pi named "pi-{1-9}". The order is not important.
     #+BEGIN_SRC /etc/exports
@@ -139,7 +139,7 @@ These scripts are in pre-alpha version
     sudo systemctl restart rpcbind nfs-kernel-service
     #+END_SRC
     
-**** The NFS-TEMPLATE
+**** The NFS-TEMPLATE:
 
     When you add a new Raspberry Pi to your cluster, the script add-raspi.sh copies the content of a 
     "Template" folder named NFS-TEMPLATE, stored in /pxe/nfs/. This template contains the entire 
@@ -155,7 +155,7 @@ These scripts are in pre-alpha version
     - Add "sudo ./deploy-script.sh" in NFS-TEMPLATE/home/pi/.bashrc
 
 
-* Implementation
+* Implementation:
 
 We did our tests with a basic desktop computer as pi-controller, an 16 Raspberry Pi 4.
 Pis are powered by PoE from our switch, so we can remote reboot each Pi.
