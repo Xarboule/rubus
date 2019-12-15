@@ -1,19 +1,22 @@
 * RUBUS : Raspberry Unintelligent Boot Utility System
 ** What is RUBUS?
    RUBUS is a stupid deployment system for Raspberry Pi clusters over PXE. 
-   It gives the user an easy way to deploy images on a large amount of Raspberry Pi, while using a machine as a PXE / NFS server.
+   It provides an easy way to deploy images on a large amount of Raspberry Pi, while using a machine as a PXE / NFS server.
    We created RUBUS for our Computer Science lab.
 
 ** How to use RUBUS?
-   Just don't.
-   But if you really have to, read the documentation below.
+   For the moment, just don't.
+   But if you really have to, read the documentation below, and use it at your own risks.
 
 ** Credits
    The initial tutorial we started with :
    https://hackaday.com/2019/11/11/network-booting-the-pi-4/
    
    So, thank you Jonathan Bennett for this amazing work.
-
+   This tutorial is about booting Raspberry Pi 4 in PXE on NFS.
+   We used it to flash our Raspberry Pis bootloader with a beta bootloader with PXE, 
+   and to create the NFS-TEMPLATE containing our temporary system.
+   
 * Deployment scripts
 These scripts are in pre-alpha version
 ** Server side
@@ -21,15 +24,15 @@ These scripts are in pre-alpha version
 **** Syntax: 
      sudo ./add-raspberry.sh <pi-name>
 **** Effect:
-     Creates a new Raspberry Pi named <pi-name> in the cluster.
+     Creates a new Raspberry Pi named <pi-name> in your cluster.
      Can only be used by an administrator.
 
 *** start-deploy.sh
 **** Syntax:
      ./start-deploy.sh <pi-name>
 **** Effect:
-     Enables the PXE boot for the Raspberry named <pi-name>.
-     After running this command, you need to reboot the Raspberry
+     Enables PXE boot for the Raspberry named <pi-name>.
+     After running this command, you need to reboot your Raspberry
      to get the new system installed on the SD card.
      
      Warning : After rebooting, all data on the SD card will be lost.
@@ -50,7 +53,7 @@ These scripts are in pre-alpha version
    -1 server machine (We used Ubuntu server 18.04 ) named pi-controller
    -n client Raspberry Pi (We used Raspi 4) with various different names
   
-   We'll consider the network already contains a DHCP server for the pi-controller and all the Pis.
+   We'll consider your network already contains a DHCP server for the pi-controller server and all Raspberry Pis.
 
 ** Raspberry Pi Bootloader
    When a Raspberry Pi boots with the right bootloader, it'll have the following configuration :
@@ -58,28 +61,28 @@ These scripts are in pre-alpha version
    -If a PXE server is found (our pi-controller) it'll try to access /tftp/<pi-name>
 
 ** PXE boot with dnsmasq (tftp)
-   When a Raspberry Pi asks for a PXE boot on /tftp/<pi-name>, if the folder exists, contains the right files, 
-   and is not in a "disabled" state, the pi-controller server will provide them to the Raspberry Pi.
+   When a Raspberry Pi asks for a PXE boot on /tftp/<pi-name>, if this folder exists, contains the right files, 
+   and is not in "disabled" state, the pi-controller server will provide them to the Raspberry Pi.
 
 ** NFS temporary environment
-   Once the kernel provided by the PXE server will end, it'll try to mount a NFS available on the 
+   Once the kernel provided by PXE will end booting, it'll try to mount a NFS available on 
    pi-controller at /pxe/nfs/<pi-name>. This system will finish to boot and run a script that copies the 
-   iso located in /iso/image.iso to the SD card. It'll also set the hostname and enable SSH on the Pi, 
-   before performing the "PXE suicide" procedure, and rebooting it.
+   iso located in /iso/image.iso to SD card. It'll also set the hostname and enable SSH on the Pi, 
+   before performing "PXE suicide" procedure, and rebooting.
 
 ** "PXE suicide" procedure
-   Once your Pi has copied the iso to the SD card and configured the new system, it'll move the content of /tftp/<pi-name>
-   to the new /tftp/<pi-name>/disabled folder. That way, on next boot, the PXE boot will fail and the Pi will boot from the SD card.
+   Once your Pi has copied the iso to SD card and configured the new system, it'll move the content of /tftp/<pi-name>
+   to a new folder "disabled" in /tftp/<pi-name>/disabled. That way, on next boot, PXE boot will fail and the Pi will boot from SD card.
 
 ** Complete boot sequence
    1) <pi-name> boots in PXE mode 
    2) PXE Server gives the /tftp/<pi-name>
-   3) <pi-name> boots the temporary kernel
-   4) <pi-name> mounts the NFS in /pxe/nfs/<pi-name>
-   5) <pi-name> runs the deploy-script.sh
+   3) <pi-name> boots temporary kernel
+   4) <pi-name> mounts NFS in /pxe/nfs/<pi-name>
+   5) <pi-name> runs deploy-script.sh
       1) dd the /iso/image.iso on SD card
       2) update the hostname and /etc/hosts
-      3) enable ssh at boot in the new system
+      3) enable ssh at boot in your new system
       4) umount the SD card
       5) disable PXE for next boot
       6) reboot
@@ -92,7 +95,7 @@ These scripts are in pre-alpha version
     For the moment, we only support Raspberry Pi 4.
 *** Bootloader
 **** TODO : Add the bootloader flashing procedure
-     The default Raspberry Pi 4 bootloader does not contain the PXE option. To get it, you need to flash a newer bootloader 
+     The default Raspberry Pi 4 bootloader does not contain PXE option. To get it, you need to flash a newer bootloader 
      which is in beta version while i'm writing this documentation. 
      
 
@@ -148,4 +151,10 @@ These scripts are in pre-alpha version
     - Add the NFS-TEMPLATE/home/pi/deploy-script.sh
     - Add "sudo ./deploy-script.sh" in NFS-TEMPLATE/home/pi/.bashrc
 
+
+* Implementation
+
+We did our tests with a basic desktop computer as pi-controller, an 16 Raspberry Pi 4.
+Pis are powered by PoE from our switch, so we can remote reboot each Pi.
+We have a DHCP server in our LAN.
 
