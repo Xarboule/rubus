@@ -23,10 +23,17 @@ echo
 
 
 
-read -p "Do you want to deploy the Raspberry Pi named $1 ? [y/n] " -n 1 -r
+read -p "Do you want to add the Raspberry Pi named $1 to the cluster? [y/n] " -n 1 -r
 echo    # (optional) move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
+    if [[ -d /pxe/nfs/$1 ]]
+    then
+	echo ""
+	echo "ERROR ! This Raspberry Pi already exists in /pxe/nfs/ !"
+	echo ""
+	exit 1
+    fi
     # do dangerous stuff
     sudo mkdir /tftp/$1 || fail
     echo "Copy the NFS-TEMPLATE folder... (can take some time)"
