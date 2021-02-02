@@ -3,6 +3,8 @@
 NFSPATH='/pxe/nfs'
 TYPES="chaumont chasseral"
 
+echo "Last update : $(date +"%D %T")"
+
 for type in $TYPES
 do
     echo -e "\n=== $type ===\n\n" 
