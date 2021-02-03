@@ -9,7 +9,7 @@
 
 	<?php
 	  // Update the state  
-	  `/home/iiun/list-pi.sh > /var/www/html/cluster-state.txt`;
+	  `/home/iiun/list-pi.sh > /var/www/html/pi-controller/cluster-state.txt`;
 
 	  // Print the state line by line
 	  $lines = file( "cluster-state.txt" );
